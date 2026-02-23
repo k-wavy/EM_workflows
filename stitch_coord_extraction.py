@@ -17,38 +17,6 @@ Image.MAX_IMAGE_PIXELS = None
 
 # --- Functions ---
 
-# Function to get the image resolution from a TIFF file's metadata
-def get_tiff_resolution(filepath):
-    
-    # Try to open the image
-    img = Image.open(filepath)
-    
-    # Check if the image has metadata tags
-    if img.tag:
-        # The tag for XResolution (resolution along the width) is 0x011A
-        x_res_tag = img.tag.get(0x011A)
-        
-        if x_res_tag:
-            # The resolution is stored as a fraction (numerator, denominator)
-            # We only use the first part, which is (numerator / denominator)
-            # For simplicity, we assume the denominator is 1 and just use the numerator
-            x_res = x_res_tag[0][0]
-            
-            # The tag for ResolutionUnit is 0x0128
-            unit_tag = img.tag.get(0x0128)
-            
-            # Unit '3' means resolution is in 'cm' (centimeters)
-            if unit_tag and unit_tag[0] == 3:
-                # Convert resolution from pixels/cm to nm/pixel
-                # 1 cm = 10,000,000 nm
-                resolution = 10000000 / x_res
-                print(f"Got resolution from file: {resolution} nm/pixel.")
-                img.close()
-                return resolution
-            
-    img.close()
-    return
-
 # Function to go through all image files in a folder and create a coordinate file
 def create_stitch_coordinate_file_from_dir(input_dir, output_dir, resolution_nm, overlap_percentage):
     
@@ -143,6 +111,13 @@ def main():
     )
 
     parser.add_argument(
+        "--resolution",
+        type=float,
+        required=True,
+        help="Resolution in nm/px. REQUIRED."
+    )
+
+    parser.add_argument(
         "--overlap",
         type=float,
         required=True,
@@ -158,6 +133,8 @@ def main():
 
     # Use the overlap value directly
     OVERLAP = args.overlap
+
+    resolution = args.resolution
 
     # Validate overlap
     if not (0 <= OVERLAP < 1):
@@ -196,8 +173,6 @@ def main():
             first_file = tiff_files[0]
             first_image_path = os.path.join(full_section_path, first_file)
             
-            # Get resolution
-            resolution = get_tiff_resolution(first_image_path)
 
             # Create coordinate file
             create_stitch_coordinate_file_from_dir(
