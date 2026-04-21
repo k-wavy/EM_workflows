@@ -1,5 +1,5 @@
-#!/bin/bash
-set -eu
+#!/bin/env bash
+
 # sort raw EM scans into folders for feabas or other
 
 # by Sanja Jasek
